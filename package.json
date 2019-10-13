@@ -1,0 +1,58 @@
+{
+  "name": "hassantbuilderapplication",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "android": "react-native run-android",
+    "ios": "react-native run-ios",
+    "start": "react-native start",
+    "test": "jest",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@react-native-community/geolocation": "^2.0.2",
+    "add": "^2.0.6",
+    "firebase": "^7.2.0",
+    "moment": "^2.24.0",
+    "react": "16.9.0",
+    "react-moment": "^0.9.6",
+    "react-native": "0.61.2",
+    "react-native-animatable": "^1.3.2",
+    "react-native-background-job": "^2.3.1",
+    "react-native-elements": "^1.2.6",
+    "react-native-geocoder": "^0.5.0",
+    "react-native-gesture-handler": "^1.4.1",
+    "react-native-google-signin": "^2.1.0",
+    "react-native-linear-gradient": "^2.5.6",
+    "react-native-parallax-scroll-view": "^0.21.3",
+    "react-native-permissions": "^2.0.2",
+    "react-native-push-notification": "^3.1.9",
+    "react-native-really-awesome-button": "^1.4.2",
+    "react-native-reanimated": "^1.3.0",
+    "react-native-screens": "^2.0.0-alpha.3",
+    "react-native-simple-radio-button": "^2.7.4",
+    "react-native-svg": "^9.11.1",
+    "react-native-svg-charts": "^5.3.0",
+    "react-native-vector-icons": "^6.6.0",
+    "react-navigation": "^4.0.10",
+    "react-navigation-drawer": "^2.2.2",
+    "react-navigation-stack": "^1.9.4",
+    "react-redux": "^7.1.1",
+    "reactotron-react-native": "^4.0.2",
+    "redux": "^4.0.4",
+    "yarn": "^1.19.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.6.3",
+    "@babel/runtime": "^7.6.3",
+    "@react-native-community/eslint-config": "^0.0.5",
+    "babel-jest": "^24.9.0",
+    "eslint": "^6.5.1",
+    "jest": "^24.9.0",
+    "metro-react-native-babel-preset": "^0.56.0",
+    "react-test-renderer": "16.9.0"
+  },
+  "jest": {
+    "preset": "react-native"
+  }
+}

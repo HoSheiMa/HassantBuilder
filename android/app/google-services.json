@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "190356971199",
+    "firebase_url": "https://hassantbuilderapplication.firebaseio.com",
+    "project_id": "hassantbuilderapplication",
+    "storage_bucket": "hassantbuilderapplication.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:190356971199:android:ffd0aebcb9901228e5700a",
+        "android_client_info": {
+          "package_name": "com.hassantbuilderapplication"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "190356971199-98i597ooijfo0afa6mbsmn4bitqe05j3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB-_AIwKsMF429Hj3noXRu2WftAIjcZKw4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "190356971199-98i597ooijfo0afa6mbsmn4bitqe05j3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

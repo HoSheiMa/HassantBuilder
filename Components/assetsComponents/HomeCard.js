@@ -1,3 +1,6 @@
+/* eslint-disable eqeqeq */
+/* eslint-disable radix */
+/* eslint-disable react-native/no-inline-styles */
 import React, {Component} from 'react';
 import {
   View,
@@ -5,63 +8,245 @@ import {
   StyleSheet,
   Dimensions,
   ImageBackground,
+  TouchableOpacity,
 } from 'react-native';
 import {ProgressCircle} from 'react-native-svg-charts';
 
-fw = Dimensions.get('screen').width;
-fh = Dimensions.get('screen').height;
+import moment from 'moment';
+import {_retrieveData, _storeData} from '../helpers/Functions';
+import Store from '../helpers/store/store';
 
+import {Icon} from 'react-native-elements';
+
+const fw = Dimensions.get('screen').width;
+const fh = Dimensions.get('screen').height;
 export default class HomeCard extends Component {
+  constructor() {
+    super();
+    this.state = {
+      SuccessProcess: null,
+      toDay: moment().format('DD-MM-YYYY'),
+      toDayWasSigning: false,
+      FinshAfter: null,
+      daysLeft: null,
+    };
+  }
+
+  _getGoalInfo = async id => {
+    var Gaols = await _retrieveData('Goals');
+    Gaols = JSON.parse(Gaols);
+    var OwnGoal = null;
+    for (var i in Gaols) {
+      if (Gaols[i].id == id) {
+        OwnGoal = Gaols[i];
+        break;
+      }
+    }
+    return OwnGoal;
+  };
+
+  _isAvaliableToDay = async (id, today, type) => {
+    var GJson = await _retrieveData('Goals');
+
+    if (!GJson) GJson = '[]';
+
+    GJson = JSON.parse(GJson);
+
+    var found = false;
+
+    for (var i in GJson) {
+      if (GJson[i].id == id) {
+        if (type == 'SuccessProgress') {
+          for (var ii in GJson[i].SuccessProgress) {
+            if (GJson[i].SuccessProgress[ii].date == today) {
+              found = true;
+              break;
+            }
+          }
+        } else {
+          for (var ii in GJson[i].FailedProgress) {
+            if (GJson[i].FailedProgress[ii].date == today) {
+              found = true;
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    return !found;
+  };
+
+  initGoalsTimesAndDates = async () => {
+    var _Goal = await this._getGoalInfo(this.props.id);
+
+    // Get  differant from the date booked and today
+    var dateBooked = _Goal.date.split('-').reverse();
+    for (var i in dateBooked) {
+      var int = parseInt(dateBooked[i]);
+      if (i == 1) {
+        int = int - 1; // moment month 0-11 | real month 1-12
+      }
+      dateBooked[i] = int;
+    }
+    var today = this.state.toDay.split('-').reverse();
+    for (var i in today) {
+      var int = parseInt(today[i]);
+      if (i == 1) {
+        int = int - 1; // moment month 0-11 | real month 1-12
+      }
+      today[i] = int;
+    }
+
+    dateBooked = moment(dateBooked);
+    today = moment(today);
+
+    this.state.FinshAfter = this.props.FinshAfter * 7; // WEEK TO DAYS
+
+    var theRemainingTime =
+      this.state.FinshAfter - (today.diff(dateBooked, 'day') + 1); // "Gaol Full Time" - ("the time between datebooked & today" + "today")
+
+    this.state.SuccessProcess =
+      (_Goal.SuccessProgress.length / this.state.FinshAfter) * 100;
+
+    var dl = this.state.FinshAfter - theRemainingTime;
+
+    this.state.daysLeft = dl;
+
+    this.state.theRemainingTime = theRemainingTime;
+    this.forceUpdate();
+  };
+  async componentDidMount() {
+    await this.initGoalsTimesAndDates();
+  }
+
+  async componentWillUpdate() {
+    await this.initGoalsTimesAndDates();
+  }
+
+  renderGoalInfoSmallPanal() {
+    return (
+      <View
+        style={{
+          flexDirection: 'row',
+        }}>
+        <Text
+          style={{
+            marginRight: 8,
+            color: '#6FCF97',
+          }}>
+          SUCCESS {this.props.SuccessProgress.length}
+        </Text>
+        <Text
+          style={{
+            color: '#EB5757',
+            marginRight: 8,
+          }}>
+          FAILED {this.props.FailedProgress.length}
+        </Text>
+        <Text
+          style={{
+            color: '#F2C94C',
+          }}>
+          {this.state.FinshAfter && this.state.theRemainingTime
+            ? this.state.FinshAfter - this.state.theRemainingTime - 1 >= 0
+              ? `DAYS LEFT ${this.state.FinshAfter -
+                  this.state.theRemainingTime -
+                  1}`
+              : ''
+            : 'Loading'}
+        </Text>
+      </View>
+    );
+  }
+
+  renderCardGoalTitle() {
+    return (
+      <View numberOfLines={1} style={style.goalsBox_Card_section_1_title_cover}>
+        <ImageBackground
+          source={require('../../assets/question-mark-button.png')}
+          style={style.goalsBox_Card_section_1_help}
+        />
+        <Text style={style.goalsBox_Card_section_1_title}>
+          {' '}
+          {this.props.title.toUpperCase()}{' '}
+        </Text>
+      </View>
+    );
+  }
+
+  renderCardProgressCircle() {
+    return (
+      <View style={style.goalsBox_Card_section_1_charts}>
+        <ProgressCircle
+          style={{
+            height: '80%',
+          }}
+          progress={this.state.daysLeft / this.state.FinshAfter}
+          progressColor={'#FF8865'}
+        />
+        <View
+          style={{
+            position: 'absolute',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+          }}>
+          <Text>
+            {' '}
+            {Math.floor(
+              (this.state.daysLeft / this.state.FinshAfter) * 100,
+            )}%{' '}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   render() {
     return (
-      <View style={style.goalsBox_Card_cover}>
+      <TouchableOpacity
+        onPress={() => {
+          this.props.navigation.navigate('FullGoalCard', {id: this.props.id});
+        }}
+        style={style.goalsBox_Card_cover}>
         <View style={style.goalsBox_Card}>
           <View style={style.goalsBox_Card_top_section}>
-            <View style={style.goalsBox_Card_section_1}>
-              <View style={style.goalsBox_Card_section_1_title_cover}>
-                <ImageBackground
-                  source={require('../../assets/question-mark-button.png')}
-                  style={style.goalsBox_Card_section_1_help}></ImageBackground>
-                <Text style={style.goalsBox_Card_section_1_title}> Title </Text>
-              </View>
-              <Text style={style.goalsBox_Card_section_1_info}>
-                Info info info infsa askmklsa info unfas oijioasaskmklsa info
-                unfas oijioasf jfioas
-              </Text>
-            </View>
-            <View style={style.goalsBox_Card_section_1_charts}>
-              <ProgressCircle
-                style={{
-                  height: '60%',
-                }}
-                progress={0.6}
-                progressColor={'#FF8865'}
-              />
+            {this.renderCardProgressCircle()}
+            <View
+              style={{
+                flexDirection: 'column',
+                width: '100%',
+                marginLeft: 8,
+              }}>
+              {this.renderCardGoalTitle()}
+              {this.renderGoalInfoSmallPanal()}
               <View
                 style={{
-                  position: 'absolute',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '100%',
+                  marginTop: 15,
+                  alignItems: 'flex-end',
+                  width: '80%',
                 }}>
-                <Text> 60 % </Text>
+                <View
+                  style={{
+                    width: 'auto',
+                    borderRadius: 999,
+                    borderWidth: 1,
+                    padding: 6,
+                  }}>
+                  <ImageBackground
+                    source={require('./../../assets/right-arrow.png')}
+                    style={{
+                      width: 34,
+                      height: 34,
+                    }}
+                  />
+                </View>
               </View>
-            </View>
-          </View>
-          <View style={style.goalsBox_Card_section_Actions_cover}>
-            <View style={style.goalsBox_Card_section_Actions_btns}>
-              <ImageBackground
-                source={require('../../assets/like.png')}
-                style={style.goalsBox_Card_section_Like}></ImageBackground>
-            </View>
-            <View style={style.goalsBox_Card_section_Actions_btns}>
-              <ImageBackground
-                source={require('../../assets/dislike.png')}
-                style={style.goalsBox_Card_section_Dislike}></ImageBackground>
             </View>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   }
 }
@@ -69,46 +254,29 @@ export default class HomeCard extends Component {
 const style = StyleSheet.create({
   goalsBox_Card_cover: {
     width: fw,
-    // padding: 50,
-    marginBottom: 5,
     padding: 10,
     alignItems: 'center',
-    height: 180,
+    height: 160,
   },
   goalsBox_Card: {
     padding: 10,
-    // borderTopWidth: 1,
-    // borderTopColor: 'rgba(0,0,0,.1)',
-    // borderRightWidth: 1,
-    // borderRightColor: 'rgba(0,0,0,.1)',
-    // borderBottomWidth: 1,
-    // borderBottomColor: 'rgba(0,0,0,.1)',
-    borderLeftWidth: 4,
-    borderLeftColor: '#FF8865',
     backgroundColor: '#fff',
-    width: fw * 0.9,
+    width: fw,
     height: '100%',
-    flex: 1,
-    elevation: 10,
-    // translateY: 0,
   },
   goalsBox_Card_top_section: {
     flexDirection: 'row',
     height: '80%',
   },
   goalsBox_Card_section_1: {
-    // justifyContent: 'space-evenly',
     height: '100%',
     width: '70%',
-    // backgroundColor: 'red',
   },
   goalsBox_Card_section_1_charts: {
     justifyContent: 'center',
     textAlign: 'center',
-    // alignItems: 'center',
     height: '100%',
-    width: '30%',
-    // backgroundColor: 'blue',
+    width: '18%',
   },
 
   goalsBox_Card_section_1_title_cover: {
@@ -116,37 +284,14 @@ const style = StyleSheet.create({
     alignItems: 'center',
   },
   goalsBox_Card_section_1_title: {
-    fontSize: 21,
+    fontSize: 24,
     color: '#212121',
+    width: '80%',
     marginLeft: 6,
   },
-  goalsBox_Card_section_1_info: {
-    color: '#4B515D',
-    fontSize: 17,
-    marginTop: 5,
-  },
+
   goalsBox_Card_section_1_help: {
-    width: 16,
-    height: 16,
-  },
-  goalsBox_Card_section_Actions_cover: {
-    flexDirection: 'row',
-    width: '100%',
-    justifyContent: 'space-between',
-    height: '20%',
-    // backgroundColor: 'yellow',
-  },
-  goalsBox_Card_section_Actions_btns: {
-    width: '50%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  goalsBox_Card_section_Dislike: {
-    width: 16,
-    height: 16,
-  },
-  goalsBox_Card_section_Like: {
-    width: 16,
-    height: 16,
+    width: 20,
+    height: 20,
   },
 });

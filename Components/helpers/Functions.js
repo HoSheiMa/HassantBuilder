@@ -1,6 +1,8 @@
 import FirebaseApp from './FirebaseApp';
 import {AsyncStorage} from 'react-native';
-
+import {check, request, PERMISSIONS, RESULTS} from 'react-native-permissions';
+import Geolocation from '@react-native-community/geolocation';
+import Geocoder from 'react-native-geocoder';
 export async function _storeData(key, value) {
   try {
     await AsyncStorage.setItem(key, value);
@@ -106,7 +108,7 @@ export function Firebase_Update(
     .where(filter[0], filter[1], filter[2])
     .get()
     .then(d => {
-      id = d.docs[0].id;
+      var id = d.docs[0].id;
       FirebaseApp.firestore()
         .collection(collection)
         .doc(id)
@@ -123,7 +125,7 @@ export function uploadImage(
   SuccessFun = () => {},
   ErrorFunc = () => {},
 ) {
-  typeimage = type.split('/')[1];
+  var typeimage = type.split('/')[1];
 
   // let filePath = uri;
   // let rnfbURI = RNFetchBlob.wrap(filePath);
@@ -147,4 +149,29 @@ export function uploadImage(
 
 export function FirebaseFileUrl(fileName) {
   return `https://firebasestorage.googleapis.com/v0/b/pro3day.appspot.com/o/${fileName}?alt=media&token=0a24dd5b-93e2-4787-b282-a492526434ce`;
+}
+
+export async function getLocation() {
+  var loc = null;
+
+  await request(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION);
+
+  var state = await check(PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION);
+
+  if (state === RESULTS.GRANTED) {
+    loc = await getLocationFunction();
+  }
+  return loc;
+}
+
+function getLocationFunction() {
+  return new Promise(resolve => {
+    Geolocation.getCurrentPosition(data => {
+      var loc = {
+        lat: data.coords.latitude,
+        lng: data.coords.longitude,
+      };
+      resolve(loc);
+    });
+  });
 }

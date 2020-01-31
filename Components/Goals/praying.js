@@ -9,12 +9,13 @@ import {
   ImageBackground,
   Platform,
   TextInput,
+  KeyboardAvoidingView,
+  ScrollView,
 } from 'react-native';
-import {Switch} from 'react-native-gesture-handler';
-import RadioForm, {
-  RadioButton,
-  RadioButtonInput,
-} from 'react-native-simple-radio-button';
+import {Calendar} from 'react-native-calendars';
+import {BoxShadow} from 'react-native-shadow';
+
+import * as Animatable from 'react-native-animatable';
 
 import AwesomeButtonRick from 'react-native-really-awesome-button/src/themes/blue';
 
@@ -22,53 +23,84 @@ const fw = Dimensions.get('screen').width;
 const fh = Dimensions.get('screen').height;
 
 import Store from '../helpers/store/store';
-import ParallaxScrollView from 'react-native-parallax-scroll-view';
 import LinearGradient from 'react-native-linear-gradient';
 import moment from 'moment';
 import {_storeData, _retrieveData} from '../helpers/Functions';
-
-const radio_props = [
-  {label: '1 Day', value: '1 Day'},
-  {label: '1 Week', value: '1 Week'},
-  {label: '1 Month', value: '1 Month'},
-];
 export default class Praying extends Component {
   constructor(props) {
     super(props);
     this.state = {
       title: 'Goal title 1',
-      type: '1 Day',
-      notf: false,
-      notfTimeError: false,
       titleError: false,
-      notfTime: '8',
-      notfTimeType: 'PM',
       donation: 5,
-      date: moment().format('D-M-Y'),
+      scrollView: null,
+      step: 1,
+      date: null, // from
+      FinshAfter: 5, // to
+      RefereeOnHonor: false,
+      RefereeEmail: null,
+      showPickDate: false,
+      renderPickRefereePopUp: false,
+      PickDated: null, // day of start
     };
   }
-
+  nextStep = () => {
+    var n = this.state.step + 1;
+    this.setState({
+      step: n,
+    });
+    if (n == 2) {
+      setTimeout(() => {
+        this.state.scrollView.scrollToEnd({animated: true});
+        this.nextStep();
+      }, 400);
+    }
+    if (n == 3) {
+      setTimeout(() => {
+        this.state.scrollView.scrollToEnd({animated: true});
+      }, 1000);
+    }
+    if (n == 4) {
+      this.setState({
+        renderPickRefereePopUp: false,
+      });
+      setTimeout(() => {
+        this.state.scrollView.scrollToEnd({animated: true});
+      }, 400);
+    }
+    if (n == 5) {
+      setTimeout(() => {
+        this.state.scrollView.scrollToEnd({animated: true});
+      }, 400);
+    }
+  };
   SaveGoal = async () => {
-    if (this.state.notfTimeError) return;
-    if (this.state.titleError) return;
+    if (this.state.titleError) {
+      return;
+    }
 
     var id = 'id_' + Math.random() * 99999 + '' + this.state.date;
 
     var Info = {
-      title: this.state.title,
-      type: this.state.type,
-      notf: this.state.notf,
-      notfTime: this.state.notfTime + ' ' + this.state.notfTimeType,
-      donation: this.state.donation + '.0',
-      date: this.state.date,
-
-      progress: [],
-      id: id,
+      title: this.state.title, // string
+      type: this.state.type, // string
+      donation: this.state.donation, // int
+      date: this.state.date, // string
+      FinshAfter: this.state.FinshAfter, // int
+      RefereeOnHonor: this.state.RefereeOnHonor, // bool
+      RefereeEmail: this.state.RefereeEmail, // string | null
+      Goaltype: 'Praying', // string
+      SuccessProgress: [], // array
+      FailedProgress: [], // array
+      isFinshed: false, // bool
+      id: id, // string
     };
 
     var GJson = await _retrieveData('Goals');
 
-    if (!GJson) GJson = '[]';
+    if (!GJson) {
+      GJson = '[]';
+    }
 
     GJson = JSON.parse(GJson);
 
@@ -78,362 +110,382 @@ export default class Praying extends Component {
 
     await _storeData('Goals', GJson);
 
+    Store.getState().AppSetState.HomeForceUpdate();
+
     this.props.navigation.pop();
   };
 
-  render() {
+  PickDate = date => {
+    console.log(date);
+    var d = new moment(date.dateString, 'YYYY-MM-DD').format('DD-MM-YYYY');
+    var day = new moment(date.dateString, 'YYYY-MM-DD').format('dddd');
+
+    this.setState({
+      showPickDate: !this.state.showPickDate,
+      date: d,
+      PickDated: day,
+    });
+    this.nextStep();
+  };
+
+  showPickDate = () => {
+    this.setState({
+      showPickDate: !this.state.showPickDate,
+    });
+  };
+
+  renderCalenderPicker() {
     return (
-      <ParallaxScrollView
-        parallaxHeaderHeight={fh * 0.6}
-        backgroundColor="white"
+      <View
         style={{
           flex: 1,
-        }}
-        renderForeground={() => (
-          <ImageBackground
-            source={require('../../assets/praying.jpg')}
-            imageStyle={{
-              borderBottomLeftRadius: 40,
-              borderBottomRightRadius: 40,
-            }}
-            style={{
-              width: fw,
-              flex: 1,
-              // height: fh * 0.6,
-            }}>
-            <LinearGradient
-              style={{
-                width: '100%',
-                height: '100%',
-                borderBottomLeftRadius: 40,
-                borderBottomRightRadius: 40,
-              }}
-              start={{x: 0, y: 0}}
-              end={{x: 1, y: 1}}
-              colors={['#000', 'transparent']}>
-              <Text
-                style={{
-                  color: '#fff',
-                  marginLeft: 25,
-                  marginTop: 25,
-
-                  fontFamily:
-                    Platform.OS === 'android' ? 'sans-serif-light' : undefined,
-
-                  fontSize: 48,
-                }}>
-                Praying
-              </Text>
-              <Text
-                style={{
-                  color: '#fff',
-                  marginTop: 50,
-                  marginLeft: 25,
-
-                  fontFamily:
-                    Platform.OS === 'android' ? 'sans-serif-light' : undefined,
-                  fontSize: 19,
-                  fontWeight: '400',
-                  width: '90%',
-                }}>
-                Salat is the obligatory Muslim prayers, performed five times
-                each day by Muslims. It is the second Pillar of Islam Praying to
-                allah is the important think in the world should any muslim do
-                it.
-              </Text>
-            </LinearGradient>
-          </ImageBackground>
-        )}>
-        {/**
-            praying part.
-            we should have a 3 Requirements
-            1 - goal time {day|week|manth}
-            2 - notification you or not
-        */}
-
+          width: fw,
+          height: fh,
+          backgroundColor: 'rgba(0, 0, 0, .4)',
+          position: 'absolute',
+          zIndex: 99,
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}>
         <View
           style={{
-            width: '100%',
-            justifyContent: 'center',
-            marginTop: 25,
-            alignItems: 'center',
+            borderRadius: 8,
+            width: fw * 0.8,
           }}>
-          <View
-            style={{
-              with: '80%',
-            }}>
-            <Text
-              style={{
-                color: '#aaa',
-              }}>
-              Goal title
-            </Text>
-            <TextInput
-              defaultValue={this.state.title}
-              onChange={t => {
-                var t = t.nativeEvent.text;
-                if (t.length > 4) {
-                  this.setState({
-                    title: t,
-                    titleError: false,
-                  });
-                } else {
-                  this.setState({
-                    title: t,
-                    titleError: true,
-                  });
-                }
-              }}
-              maxLength={16}
-              style={{
-                borderWidth: 2,
-                borderColor: this.state.titleError ? '#ff4444' : '#eee',
-                backgroundColor: '#f8f6fa',
-                borderRadius: 8,
-                width: fw * 0.8,
-              }}
-            />
-          </View>
+          <Calendar
+            onDayPress={this.PickDate}
+            // Initially visible month. Default = Date()
+            current={moment().format('YYYY-MM-DD')}
+            // Minimum date that can be selected, dates before minDate will be grayed out. Default = undefined
+            minDate={moment().format('YYYY-MM-DD')}
+          />
         </View>
-        <View style={style.popUpSection}>
-          <View style={style.popUpSection_0}>
-            <Text style={style.popUpSectionTitle}>Goal time</Text>
-          </View>
-          <View style={style.popUpSection_1}>
-            <RadioForm initial={0} formHorizontal={true} animation={true}>
-              {/* To create radio buttons, loop through your array of options */}
-              {radio_props.map((obj, i) => (
-                <TouchableOpacity
-                  key={i}
-                  onPress={() => {
-                    this.setState({
-                      type: radio_props[i].value,
-                    });
-                  }}>
-                  <View
-                    style={{
-                      width: 80,
-                      height: 80,
-                      margin: 5,
-                      borderWidth: 2,
-                      borderColor:
-                        obj.label === this.state.type ? '#00C851' : '#eee',
-                      alignItems: 'center',
-                      justifyContent: 'space-evenly',
-                      borderRadius: 12,
-                    }}>
-                    <Text
-                      style={{
-                        fontSize: 16,
-                      }}>
-                      {radio_props[i].label}
-                    </Text>
-                    <RadioButton>
-                      <RadioButtonInput
-                        onPress={() => {}}
-                        obj={obj}
-                        borderWidth={1}
-                        isSelected={obj.label === this.state.type}
-                        buttonSize={10}
-                        buttonOuterSize={20}
-                      />
-                    </RadioButton>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </RadioForm>
-          </View>
-        </View>
+      </View>
+    );
+  }
 
-        <View
-          style={{
-            width: '100%',
-            alignItems: 'center',
-          }}>
+  renderGoalTitle() {
+    return (
+      <View
+        style={{
+          width: '100%',
+          justifyContent: 'center',
+          alignItems: 'center',
+          marginTop: -50,
+        }}>
+        <View>
           <Text
             style={{
-              width: '80%',
-              fontSize: 17,
-              textAlign: 'center',
+              color: '#aaa',
             }}>
-            We will notification You every Day To check your progress, When do
+            Goal title
           </Text>
-        </View>
-
-        <View
-          style={{
-            width: '100%',
-            justifyContent: 'center',
-            flexDirection: 'row',
-            marginTop: 25,
-          }}>
-          <Text
-            style={{
-              fontSize: 22,
-              fontFamily:
-                Platform.OS === 'android' ? 'sans-serif-light' : undefined,
-            }}>
-            When do you want to{' '}
-          </Text>
-          <Text
-            style={{
-              fontSize: 22,
-              textAlign: 'center',
-            }}>
-            alert you?
-          </Text>
-        </View>
-
-        <View
-          style={[
-            style.popUpSection,
-            {
-              flexDirection: 'row',
-            },
-          ]}>
-          <View style={style.popUpSection_0}>
-            <Text style={style.popUpSectionTitle}>Notification</Text>
-          </View>
-
-          <View style={style.popUpSection_1}>
-            <Switch
-              value={this.state.notf}
-              onValueChange={() => {
-                this.setState({
-                  notf: !this.state.notf,
-                });
-              }}
-            />
-          </View>
-        </View>
-
-        <View
-          style={{
-            width: '100%',
-            justifyContent: 'center',
-            flexDirection: 'row',
-            alignItems: 'center',
-          }}>
           <TextInput
-            maxLength={2}
-            defaultValue={this.state.notfTime}
-            onChange={v => {
-              var t = v.nativeEvent.text;
-
-              t = parseInt(t);
-
-              if (t <= 12 && t !== 0 && t !== NaN) {
+            defaultValue={this.state.title}
+            onChange={t => {
+              var t = t.nativeEvent.text;
+              if (t.length > 4) {
                 this.setState({
-                  notfTime: v.nativeEvent.text,
-                  notfTimeError: false,
+                  title: t,
+                  titleError: false,
                 });
               } else {
                 this.setState({
-                  notfTimeError: true,
+                  title: t,
+                  titleError: true,
                 });
               }
             }}
-            keyboardType="number-pad"
+            maxLength={12}
             style={{
-              textAlign: 'center',
+              height: 80,
+              borderWidth: this.state.titleError ? 2 : 0,
+              borderColor: this.state.titleError ? '#ff4444' : '#eee',
+              backgroundColor: '#f8f6fa',
               borderRadius: 8,
-              borderWidth: 1,
-              borderColor: this.state.notfTimeError ? '#ff4444' : '#00C851',
-              fontSize: 24,
-              backgroundColor: '#f6f8fa',
-              width: '30%',
-              marginRight: 15,
+              textAlign: 'center',
+              width: fw * 0.8,
+              fontSize: 25,
             }}
           />
-          <TouchableOpacity
-            style={{
-              height: 50,
-            }}
-            onPress={() => {
-              this.setState({
-                notfTimeType: 'AM',
-              });
-            }}>
-            <Text
-              style={{
-                fontSize: 24,
-                backgroundColor: '#f6f8fa',
-                height: '100%',
-                borderRadius: 8,
-                borderColor:
-                  this.state.notfTimeType === 'AM' ? '#00C851' : '#eee',
-                width: 50,
-                paddingTop: 12,
-                borderWidth: 2,
-
-                justifyContent: 'center',
-                alignItems: 'center',
-                textAlign: 'center',
-              }}>
-              AM
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={{
-              height: 50,
-            }}
-            onPress={() => {
-              this.setState({
-                notfTimeType: 'PM',
-              });
-            }}>
-            <Text
-              style={{
-                fontSize: 24,
-                backgroundColor: '#f6f8fa',
-                height: '100%',
-                borderRadius: 8,
-                width: 50,
-                borderWidth: 2,
-
-                marginLeft: 4,
-                textAlign: 'center',
-                borderColor:
-                  this.state.notfTimeType === 'PM' ? '#00C851' : '#eee',
-
-                paddingTop: 12,
-
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}>
-              PM
-            </Text>
-          </TouchableOpacity>
         </View>
+      </View>
+    );
+  }
 
+  renderOverflowBackgroundImage() {
+    return (
+      <ImageBackground
+        source={require('../../assets/praying.jpg')}
+        style={{
+          width: fw,
+          flex: 1,
+          height: fh * 0.6,
+        }}>
+        <LinearGradient
+          style={{
+            width: '100%',
+            height: '100%',
+            borderBottomLeftRadius: 40,
+            borderBottomRightRadius: 40,
+          }}
+          start={{x: 0, y: 0}}
+          end={{x: 1, y: 1}}
+          colors={['#000', 'transparent']}>
+          <Text
+            style={{
+              color: '#fff',
+              marginLeft: 25,
+              marginTop: 25,
+
+              fontFamily:
+                Platform.OS === 'android' ? 'sans-serif-light' : undefined,
+
+              fontSize: 48,
+            }}>
+            Praying
+          </Text>
+          <Text
+            style={{
+              color: '#fff',
+              marginLeft: 25,
+              fontWeight: 'bold',
+              fontFamily:
+                Platform.OS === 'android' ? 'sans-serif-light' : undefined,
+
+              fontSize: 48,
+            }}>
+            For Allah
+          </Text>
+          <Text
+            style={{
+              color: '#fff',
+              marginTop: 50,
+              marginLeft: 25,
+
+              fontFamily:
+                Platform.OS === 'android' ? 'sans-serif-light' : undefined,
+              fontSize: 19,
+              fontWeight: '400',
+              width: '90%',
+            }}>
+            Salat is the obligatory Muslim prayers, performed five times each
+            day by Muslims. It is the second Pillar of Islam Praying to allah is
+            the important think in the world should any muslim do it.
+          </Text>
+        </LinearGradient>
+      </ImageBackground>
+    );
+  }
+
+  renderTimePicker() {
+    return (
+      <View
+        style={{
+          alignItems: 'center',
+          marginTop: 20,
+        }}>
+        <Text
+          style={{
+            fontSize: 32,
+            fontFamily:
+              Platform.OS === 'android' ? 'sans-serif-light' : undefined,
+          }}>
+          Plan your
+        </Text>
+        <Text
+          style={{
+            fontSize: 32,
+            fontWeight: 'bold',
+          }}>
+          Commitment
+        </Text>
+        <View
+          style={{
+            flexDirection: 'row',
+            marginTop: 25,
+            width: fw * 0.9,
+            justifyContent: 'space-evenly',
+          }}>
+          <BoxShadow
+            setting={{
+              width: 150,
+              height: 85,
+              color: '#000',
+              border: 12,
+              radius: 3,
+              opacity: 0.1,
+              x: 0,
+              y: 3,
+            }}>
+            <View
+              style={{
+                width: 150,
+                height: 85,
+                borderRadius: 9,
+                backgroundColor: '#fff',
+              }}>
+              <View
+                style={{
+                  alignItems: 'center',
+                }}>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    marginTop: 15,
+                  }}>
+                  DURATION
+                </Text>
+              </View>
+              <View
+                style={{
+                  alignItems: 'center',
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                }}>
+                <TextInput
+                  style={{
+                    fontSize: 18,
+                  }}
+                  onChange={d => {
+                    this.setState({
+                      FinshAfter: d.nativeEvent.text,
+                    });
+                  }}
+                  keyboardType="number-pad"
+                  defaultValue={`${this.state.FinshAfter}`}
+                  maxLength={2}
+                />
+                <Text>week(s)</Text>
+              </View>
+            </View>
+          </BoxShadow>
+          <BoxShadow
+            setting={{
+              width: 150,
+              height: 85,
+              color: '#000',
+              border: 12,
+              radius: 3,
+              opacity: 0.1,
+              x: 0,
+              y: 3,
+            }}>
+            <TouchableOpacity onPress={this.showPickDate}>
+              <View
+                style={{
+                  backgroundColor: '#fff',
+                  width: 150,
+                  height: 85,
+                  borderRadius: 9,
+                  elevation: 2,
+                }}>
+                <View
+                  style={{
+                    alignItems: 'center',
+                  }}>
+                  <Text
+                    style={{
+                      fontSize: 18,
+                      marginTop: 15,
+                    }}>
+                    DURATION
+                  </Text>
+                </View>
+                <View
+                  style={{
+                    alignItems: 'center',
+                  }}>
+                  <Text
+                    style={{
+                      fontSize: 18,
+                      fontWeight: 'bold',
+                      marginTop: 10,
+                    }}>
+                    {this.state.PickDated == null
+                      ? 'Press'
+                      : this.state.PickDated}
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </BoxShadow>
+        </View>
+      </View>
+    );
+  }
+
+  renderInfoAboutTime() {
+    return (
+      <View
+        style={{
+          marginTop: 50,
+          width: '100%',
+          alignItems: 'center',
+        }}>
+        <Text
+          style={{
+            width: '80%',
+            fontSize: 17,
+            textAlign: 'center',
+          }}>
+          We will report You every{' '}
+          {this.state.PickDated == null ? 'Day' : this.state.PickDated} To check
+          your progress
+        </Text>
+        <Text
+          style={{
+            width: '80%',
+            fontSize: 17,
+            textAlign: 'center',
+            marginTop: 5,
+          }}>
+          until
+        </Text>
+
+        <Text
+          style={{
+            width: '80%',
+            fontSize: 26,
+            fontWeight: 'bold',
+            textAlign: 'center',
+            marginTop: 5,
+          }}>
+          {this.state.date == null
+            ? ''
+            : moment(this.state.date, 'DD-MM-YY')
+                .add(this.state.FinshAfter, 'w')
+                .format('MMMM, DD, YYYY')}
+        </Text>
+      </View>
+    );
+  }
+
+  renderPushment() {
+    return (
+      <View>
         <View
           style={{
             padding: 8,
             marginTop: 25,
+            alignItems: 'center',
           }}>
-          <View
+          <Text
             style={{
-              width: '100%',
-              justifyContent: 'center',
-              flexDirection: 'row',
+              fontSize: 36,
+              fontFamily:
+                Platform.OS === 'android' ? 'sans-serif-light' : undefined,
             }}>
+            Set a
             <Text
               style={{
                 fontSize: 36,
-                fontFamily:
-                  Platform.OS === 'android' ? 'sans-serif-light' : undefined,
-              }}>
-              Put a
-            </Text>
-
-            <Text
-              style={{
-                fontSize: 36,
+                fontWeight: 'bold',
               }}>
               {' '}
-              punishment
+              Stakes
             </Text>
-          </View>
+          </Text>
         </View>
         <View
           style={{
@@ -461,6 +513,7 @@ export default class Praying extends Component {
           }}>
           <TextInput
             maxLength={8}
+            onSubmitEditing={() => this.nextStep()}
             keyboardType="number-pad"
             defaultValue={`${this.state.donation}`}
             onChange={t => {
@@ -502,62 +555,435 @@ export default class Praying extends Component {
             you failed.
           </Text>
         </View>
+      </View>
+    );
+  }
+
+  renderButtons() {
+    return (
+      <View
+        style={{
+          width: '100%',
+          marginTop: 25,
+
+          height: '100%',
+          justifyContent: 'space-evenly',
+          // alignItems: 'flex-end',
+          padding: 8,
+          flexDirection: 'row-reverse',
+          // position: 'absolute',
+        }}>
+        <AwesomeButtonRick
+          type="secondary"
+          width={fw * 0.4}
+          progress
+          disabled={this.state.notfTimeError && this.state.titleError}
+          backgroundColor="transparent"
+          backgroundActive="transparent"
+          backgroundProgress="transparent"
+          backgroundPlaceholder="transparent"
+          backgroundShadow="transparent"
+          activityColor="transparent"
+          borderColor="#00C851"
+          backgroundDarker="transparent"
+          textColor="#2E2E2E"
+          onPress={next => {
+            /** Do Something **/
+
+            this.SaveGoal();
+
+            next();
+          }}>
+          Ok!
+        </AwesomeButtonRick>
+        <AwesomeButtonRick
+          type="secondary"
+          backgroundColor="transparent"
+          backgroundDarker="transparent"
+          backgroundActive="transparent"
+          backgroundProgress="transparent"
+          backgroundPlaceholder="transparent"
+          borderColor="transparent"
+          backgroundShadow="transparent"
+          activityColor="transparent"
+          width={fw * 0.4}
+          progress
+          textColor="#CC0000"
+          onPress={next => {
+            this.props.navigation.pop();
+            next();
+          }}>
+          Cancel!
+        </AwesomeButtonRick>
+      </View>
+    );
+  }
+
+  renderPickReferee() {
+    return (
+      <View>
         <View
           style={{
-            width: '100%',
-            marginTop: 25,
-
-            height: '100%',
-            justifyContent: 'space-evenly',
-            // alignItems: 'flex-end',
-            padding: 8,
-            flexDirection: 'row-reverse',
-            // position: 'absolute',
+            flexDirection: 'row',
+            justifyContent: 'center',
+            marginTop: 32,
           }}>
-          <AwesomeButtonRick
-            type="secondary"
-            width={fw * 0.4}
-            progress
-            disabled={this.state.notfTimeError && this.state.titleError}
-            backgroundColor="transparent"
-            backgroundActive="transparent"
-            backgroundProgress="transparent"
-            backgroundPlaceholder="transparent"
-            backgroundShadow="transparent"
-            activityColor="transparent"
-            borderColor="#00C851"
-            backgroundDarker="transparent"
-            textColor="#2E2E2E"
-            onPress={next => {
-              /** Do Something **/
-
-              this.SaveGoal();
-
-              next();
+          <Text
+            style={{
+              fontSize: 32,
             }}>
-            Ok!
-          </AwesomeButtonRick>
-          <AwesomeButtonRick
-            type="secondary"
-            backgroundColor="transparent"
-            backgroundDarker="transparent"
-            backgroundActive="transparent"
-            backgroundProgress="transparent"
-            backgroundPlaceholder="transparent"
-            borderColor="transparent"
-            backgroundShadow="transparent"
-            activityColor="transparent"
-            width={fw * 0.4}
-            progress
-            textColor="#CC0000"
-            onPress={next => {
-              this.props.navigation.pop();
-              next();
+            Who will
+          </Text>
+          <Text
+            style={{
+              fontWeight: 'bold',
+              fontSize: 32,
             }}>
-            Cancel!
-          </AwesomeButtonRick>
+            {' '}
+            hold
+          </Text>
         </View>
-      </ParallaxScrollView>
+        <View
+          style={{
+            alignItems: 'center',
+            marginBottom: 42,
+          }}>
+          <Text
+            style={{
+              fontWeight: 'bold',
+              fontSize: 32,
+            }}>
+            you accountable?
+          </Text>
+        </View>
+        {this.state.step == 3 ? (
+          <LinearGradient
+            style={{
+              height: 160,
+            }}
+            start={{x: 1, y: 0}}
+            end={{x: 0, y: 1}}
+            colors={['#ff9068', '#ff9068']}>
+            <View
+              style={{
+                justifyContent: 'space-between',
+              }}>
+              <View>
+                <View
+                  style={{
+                    borderRadius: 999,
+                    backgroundColor: '#ff9068',
+                    width: 90,
+                    height: 90,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    position: 'absolute',
+                    top: -28,
+                    left: 20,
+                  }}>
+                  <ImageBackground
+                    source={require('./../../assets/plus.png')}
+                    style={{
+                      width: 20,
+                      height: 20,
+                      zIndex: 99,
+                      position: 'absolute',
+                      top: 6,
+                      left: 6,
+                    }}
+                  />
+                  <View
+                    style={{
+                      backgroundColor: '#fff',
+                      borderRadius: 999,
+                      padding: 5,
+                      width: 80,
+                      height: 80,
+                      position: 'absolute',
+                      top: 6,
+                      left: 4,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        if (this.state.step == 3) {
+                          this.setState({
+                            renderPickRefereePopUp: true,
+                          });
+                        }
+                      }}>
+                      <ImageBackground
+                        source={require('./../../assets/profile.png')}
+                        style={{width: 60, height: 60}}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  textAlign: 'center',
+                  alignItems: 'center',
+                  marginTop: 15,
+                  marginLeft: 35,
+                }}>
+                <Text
+                  style={{color: '#fff', textAlign: 'center', fontSize: 19}}>
+                  Pick a
+                  <Text style={{fontWeight: 'bold', color: '#fff'}}>
+                    {' '}
+                    Referee{' '}
+                  </Text>
+                  to verify {'\n'}your Reports
+                </Text>
+              </View>
+              <View
+                style={{
+                  marginTop: 40,
+                }}>
+                <Text
+                  style={{color: '#fff', textAlign: 'center', fontSize: 16}}>
+                  Adding a Referee can increase your {'\n'} chances of success
+                  by 2x!
+                </Text>
+              </View>
+            </View>
+          </LinearGradient>
+        ) : (
+          <LinearGradient
+            style={{
+              height: 160,
+            }}
+            start={{x: 1, y: 0}}
+            end={{x: 0, y: 1}}
+            colors={['#ff9068', '#ff9068']}>
+            <View
+              style={{
+                width: fw,
+                height: 160,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+              <Text
+                style={{
+                  textAlign: 'center',
+                  fontSize: 26,
+                  color: '#fff',
+                }}>
+                {this.state.RefereeOnHonor
+                  ? 'You will receive your Reports'
+                  : `${this.state.RefereeEmail} will receive your Reports`}
+              </Text>
+            </View>
+          </LinearGradient>
+        )}
+      </View>
+    );
+  }
+
+  renderPickRefereePopUp() {
+    return (
+      <View
+        style={{
+          flex: 1,
+          width: fw,
+          height: fh,
+          justifyContent: 'flex-end',
+          zIndex: 99,
+          position: 'absolute',
+          backgroundColor: 'rgba(0, 0, 0, .4)',
+        }}>
+        <KeyboardAvoidingView
+          style={{
+            flex: 1,
+            width: fw,
+            height: fh,
+            justifyContent: 'flex-end',
+          }}
+          behavior={'position'}>
+          <BoxShadow
+            setting={{
+              width: fw,
+              height: fh * 0.4,
+              color: '#000',
+              border: 26,
+              radius: 26,
+              opacity: 0.2,
+              x: 0,
+              y: 3,
+            }}>
+            <View
+              style={{
+                width: fw,
+                height: fh * 0.4,
+                alignItems: 'center',
+                backgroundColor: '#fff',
+                justifyContent: 'center',
+                padding: 15,
+              }}>
+              <View
+                style={{
+                  width: fw * 0.8,
+                  height: 90,
+                  position: 'absolute',
+                  top: -40,
+                  justifyContent: 'space-evenly',
+                  flexDirection: 'row',
+                }}>
+                <TouchableOpacity
+                  onPress={() =>
+                    this.setState({
+                      RefereeOnHonor: !this.state.RefereeOnHonor,
+                    })
+                  }
+                  style={{
+                    backgroundColor: '#fff',
+                    width: 100,
+                    height: 100,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    borderRadius: 80,
+                  }}>
+                  <ImageBackground
+                    source={require('./../../assets/profile.png')}
+                    style={{
+                      width: 70,
+                      height: 70,
+                    }}
+                  />
+                  <Text
+                    style={{
+                      fontSize: 18,
+                      fontWeight: 'bold',
+                      position: 'absolute',
+                      top: 90,
+                      textAlign: 'center',
+                    }}>
+                    Invite a {'\n'}Referee
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() =>
+                    this.setState({
+                      RefereeOnHonor: !this.state.RefereeOnHonor,
+                    })
+                  }
+                  style={{
+                    backgroundColor: '#fff',
+                    width: 100,
+                    height: 100,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    borderRadius: 80,
+                  }}>
+                  <ImageBackground
+                    source={require('./../../assets/man-user.png')}
+                    style={{
+                      width: 70,
+                      height: 70,
+                    }}
+                  />
+
+                  <Text
+                    style={{
+                      fontSize: 18,
+                      fontWeight: 'bold',
+                      position: 'absolute',
+                      top: 90,
+                      textAlign: 'center',
+                    }}>
+                    On your {'\n'}honor
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              {this.state.RefereeOnHonor ? (
+                <View>
+                  <TouchableOpacity onPress={() => this.nextStep()}>
+                    <LinearGradient
+                      style={{
+                        width: 120,
+                        height: 50,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        borderRadius: 999,
+                      }}
+                      start={{x: 0, y: 0}}
+                      end={{x: 1, y: 1}}
+                      colors={['#ffbb33', '#FF8800']}>
+                      <Text
+                        style={{
+                          color: '#fff',
+                          fontSize: 18,
+                          elevation: 3,
+                        }}>
+                        Continue
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View>
+                  <TextInput
+                    onSubmitEditing={d => {
+                      this.setState({
+                        RefereeEmail: d.nativeEvent.text,
+                      });
+                      this.nextStep();
+                    }}
+                    style={{
+                      borderRadius: 30,
+                      backgroundColor: '#f6f9fa',
+                      width: fw * 0.8,
+                      textAlign: 'center',
+                    }}
+                    placeholder="Email address or username"
+                  />
+                  <Text
+                    style={{
+                      textAlign: 'center',
+                      marginTop: 15,
+                    }}>
+                    Select a Referee to verify the authenticity of {'\n'}
+                    your Reports, Referee's have th power to {'\n'}
+                    overturn your report, so choose wisely!
+                  </Text>
+                </View>
+              )}
+            </View>
+          </BoxShadow>
+        </KeyboardAvoidingView>
+      </View>
+    );
+  }
+
+  render() {
+    return (
+      <View>
+        {this.state.showPickDate ? this.renderCalenderPicker() : <View />}
+        <ScrollView ref={ref => (this.state.scrollView = ref)}>
+          {/**
+            praying part.
+            we should have a 3 Requirements
+            1 - goal time {day|week|manth}
+            2 - notification you or not
+          */}
+          {this.renderOverflowBackgroundImage()}
+          {this.renderGoalTitle()}
+          {this.renderTimePicker()}
+          {this.state.step >= 2 ? this.renderInfoAboutTime() : <View />}
+          {this.state.step >= 3 ? this.renderPickReferee() : <View />}
+          {this.state.step >= 4 ? this.renderPushment() : <View />}
+          {this.state.step >= 5 ? this.renderButtons() : <View />}
+        </ScrollView>
+        {this.state.renderPickRefereePopUp ? (
+          this.renderPickRefereePopUp()
+        ) : (
+          <View />
+        )}
+      </View>
     );
   }
 }
@@ -566,6 +992,8 @@ const style = StyleSheet.create({
   popUpSection: {
     width: '100%',
     padding: 10,
+    marginTop: 50,
+
     alignItems: 'center',
   },
   popUpSectionTitle: {

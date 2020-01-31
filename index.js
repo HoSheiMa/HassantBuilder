@@ -17,6 +17,8 @@ import PushNotification from 'react-native-push-notification';
 import BackgroundJob from 'react-native-background-job';
 import FirebaseApp from './Components/helpers/FirebaseApp';
 
+// global.PaymentRequest = require('react-native-payments').PaymentRequest;
+
 async function Id() {
   var userId = await getUserData('id');
 

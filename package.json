@@ -49,7 +49,7 @@
     "reactotron-react-native": "^4.0.2",
     "redux": "^4.0.4",
     "tipsi-stripe": "^7.5.1",
-    "yarn": "^1.19.1"
+    "yarn": "^1.22.0"
   },
   "devDependencies": {
     "@babel/core": "^7.6.3",
